@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Scroll-driven interior design site for ANFAS, Dubai: one room taken apart and rebuilt with a WebGL depth reveal, material studio, before/after slider and fit-out estimator.">
+<meta name="theme-color" content="#0f0d0a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ANFAS Interiors">
+<meta property="og:description" content="Scroll-driven interior design site for ANFAS, Dubai: one room taken apart and rebuilt with a WebGL depth reveal, material studio, before/after slider and fit-out estimator.">
+<meta property="og:url" content="https://dariush-tech.github.io/anfas-interiors/">
+<meta property="og:image" content="https://dariush-tech.github.io/anfas-interiors/img/room-final.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="img/emblem.png">
+<link rel="canonical" href="https://dariush-tech.github.io/anfas-interiors/">
+<title>ANFAS Interiors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap">
+<style>
+/* Layout: one room, taken apart and rebuilt by scroll on a depth-aware WebGL stage; tools float on glass; a stone-paper estimate breaks the dark. */
+:root {
+  --night: #0f0d0a;
+  --cream: #f6f1e8;
+  --mist: rgba(246, 241, 232, 0.78);
+  --hair: rgba(246, 241, 232, 0.22);
+  --glass: rgba(18, 15, 11, 0.48);
+  --gold: #d2ac66;
+  --gold-deep: #8f6c33;
+  --stone: #e8e0d2;
+  --ink: #1d1813;
+  --ink-soft: #5e5345;
+  --display: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --body: "Jost", "Helvetica Neue", Arial, sans-serif;
+  --script: "Pinyon Script", "Snell Roundhand", "Apple Chancery", cursive;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--night); color: var(--cream); font-family: var(--body); font-weight: 300; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--night); }
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+em { font-style: italic; color: var(--gold); }
+.eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--mist); margin: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 300; line-height: 1.02; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.inner { position: relative; padding-left: var(--gutter-l); padding-right: var(--gutter-r); max-width: 1440px; margin: 0 auto; }
+
+/* header */
+.site-head { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 50;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 14px;
+  display: flex; align-items: center; gap: 24px; background: linear-gradient(to bottom, rgba(10, 9, 7, 0.55), rgba(10, 9, 7, 0)); transition: background 0.4s; }
+.site-head.solid { background: rgba(15, 13, 10, 0.74); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-right: auto; }
+.brand img { height: 30px; width: auto; }
+.brand b { font-family: var(--display); font-weight: 500; font-size: 1.45rem; letter-spacing: 0.14em; }
+.brand small { font-size: 0.62rem; letter-spacing: 0.24em; color: var(--mist); text-transform: uppercase; margin-left: 4px; }
+.site-head nav { display: flex; gap: 24px; }
+.site-head nav a { text-decoration: none; font-size: 0.82rem; letter-spacing: 0.06em; color: var(--mist); }
+.site-head nav a:hover { color: var(--cream); }
+.pill { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer; border: 1px solid var(--hair); border-radius: 999px; padding: 9px 18px;
+  font: 400 0.82rem/1 var(--body); letter-spacing: 0.04em; color: var(--cream); background: rgba(246, 241, 232, 0.08); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.pill:hover { background: rgba(246, 241, 232, 0.18); }
+.pill.gold { background: var(--gold); color: #1b150c; border-color: var(--gold); font-weight: 500; }
+.pill.gold:hover { background: #e0bd7d; }
+
+/* the story: scroll takes the room apart and builds it back */
+.story { position: relative; height: 700svh; }
+.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--night); }
+#gl, .fallback, .fallback img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fallback img { object-fit: cover; opacity: 0; }
+.fallback img:first-child { opacity: 1; }
+.has-gl .fallback { display: none; }
+.scrim { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(10, 9, 7, 0.86) 0%, rgba(10, 9, 7, 0.38) 36%, rgba(10, 9, 7, 0) 60%), linear-gradient(to right, rgba(10, 9, 7, 0.5), rgba(10, 9, 7, 0) 55%); }
+.cap { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 1440px;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 0 10vh; display: grid; gap: 14px; opacity: 0; pointer-events: none; }
+.cap[data-i="0"] { opacity: 1; pointer-events: auto; }
+.cap h1 { font-size: clamp(2.7rem, 6.6vw, 6.2rem); max-width: 13ch; }
+.cap h1 .script { font-family: var(--script); font-weight: 400; color: var(--gold); font-size: 1.1em; line-height: 0.9; display: inline-block; padding-right: 0.08em; }
+.cap h2 { font-size: clamp(2.3rem, 5.6vw, 5rem); max-width: 13ch; }
+.cap p:not(.eyebrow) { margin: 0; max-width: 44ch; color: var(--mist); }
+.cue { display: flex; align-items: center; gap: 12px; font-size: 0.76rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mist) !important; }
+.cue::before { content: ""; width: 44px; height: 1px; background: var(--gold); }
+.rail { position: absolute; right: var(--gutter-r); top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.rail li { display: flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(246, 241, 232, 0.42); transition: color 0.3s; }
+.rail li::after { content: ""; width: 18px; height: 1px; background: currentColor; transition: width 0.3s; }
+.rail li.on { color: var(--cream); }
+.rail li.on::after { width: 40px; background: var(--gold); }
+
+/* sections on the dark */
+.band { padding-block: clamp(80px, 14vh, 150px); }
+.head-row { display: grid; gap: 14px; margin-bottom: clamp(28px, 5vh, 48px); }
+.head-row h2 { font-size: clamp(2.3rem, 5vw, 4.4rem); max-width: 16ch; }
+.head-row p:not(.eyebrow) { margin: 0; max-width: 52ch; color: var(--mist); }
+
+/* before / after */
+.ba { position: relative; margin: 0; aspect-ratio: 3 / 2; max-width: 100%; border-radius: 6px; overflow: hidden; --pos: 50%; background: #1a1612; }
+.ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ba .before { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+.ba .handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; background: var(--cream); transform: translateX(-1px); pointer-events: none; box-shadow: 0 0 18px rgba(0, 0, 0, 0.5); }
+.ba .handle::after { content: "‹ ›"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--cream); color: var(--ink); font: 500 1rem/1 var(--body); letter-spacing: 0.1em; }
+.ba input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.ba .tag { position: absolute; top: 14px; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; background: rgba(15, 13, 10, 0.55); pointer-events: none; }
+.ba .tag.l { left: 14px; } .ba .tag.r { right: 14px; }
+.ba:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+/* design studio */
+.studio { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; }
+.studio .view { position: absolute; inset: 0; }
+.studio .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.9s ease; }
+.studio .bg.on { opacity: 1; }
+.studio .scrim { background: linear-gradient(to right, rgba(10, 9, 7, 0.6), rgba(10, 9, 7, 0) 52%), linear-gradient(to top, rgba(10, 9, 7, 0.55), rgba(10, 9, 7, 0) 40%); }
+.studio .inner { width: 100%; padding-block: 0 7vh; }
+.panel { width: min(430px, 100%); padding: 26px 26px 22px; border-radius: 18px; background: var(--glass); border: 1px solid var(--hair);
+  backdrop-filter: blur(18px) saturate(1.1); -webkit-backdrop-filter: blur(18px) saturate(1.1); display: grid; gap: 16px; }
+.panel h2 { font-size: clamp(2rem, 3.6vw, 2.9rem); }
+.finishes { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+.finishes legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.finish { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: background 0.25s, border-color 0.25s; }
+.finish:hover { background: rgba(246, 241, 232, 0.08); }
+.finish input { position: absolute; opacity: 0; pointer-events: none; }
+.finish:has(input:checked) { background: rgba(246, 241, 232, 0.14); border-color: var(--hair); }
+.finish:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sw { width: 26px; height: 26px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); background: conic-gradient(var(--a) 0 62%, var(--b) 62% 100%); }
+.finish span { display: grid; line-height: 1.25; }
+.finish b { font-weight: 400; font-size: 0.95rem; }
+.finish small { color: var(--mist); font-size: 0.76rem; }
+.panel .note { margin: 0; font-size: 0.8rem; color: var(--mist); }
+
+/* material details */
+.details-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: center; }
+.spots { position: relative; margin: 0; aspect-ratio: 3 / 2; max-width: 100%; border-radius: 6px; overflow: hidden; }
+.spots img { width: 100%; height: 100%; object-fit: cover; }
+.spot { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(15, 13, 10, 0.45); color: var(--cream); font: 300 1.3rem/1 var(--body); cursor: pointer; display: grid; place-items: center;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform 0.25s, background 0.25s; }
+.spot::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; border: 1px solid rgba(210, 172, 102, 0.7); animation: ping 2.4s ease-out infinite; }
+.spot[aria-expanded="true"] { background: var(--gold); color: #1b150c; transform: rotate(45deg); }
+@keyframes ping { from { transform: scale(0.7); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+.detail { display: grid; gap: 12px; min-width: 0; }
+.detail h3 { font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.detail p { margin: 0; color: var(--mist); max-width: 40ch; }
+.detail ol { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.detail ol button { font: 400 0.78rem/1 var(--body); color: var(--mist); background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.detail ol button[aria-pressed="true"] { color: var(--ink); background: var(--cream); border-color: var(--cream); }
+
+/* work strip */
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 30%); gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 14px;
+  scrollbar-color: rgba(246, 241, 232, 0.3) transparent; }
+.card { scroll-snap-align: start; margin: 0; display: grid; gap: 12px; }
+.card img { aspect-ratio: 3 / 2; width: 100%; object-fit: cover; border-radius: 6px; }
+.card figcaption { display: flex; justify-content: space-between; gap: 12px; font-size: 0.86rem; }
+.card figcaption span { color: var(--mist); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* estimate (stone paper) */
+.estimate { background: var(--stone); color: var(--ink); }
+.estimate .inner { padding-block: clamp(72px, 12vh, 140px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
+.estimate .eyebrow { color: var(--ink-soft); }
+.estimate h2 { font-size: clamp(2.6rem, 5.8vw, 5.4rem); margin-top: 14px; }
+.estimate em { color: var(--gold-deep); }
+.controls { display: grid; gap: 28px; margin-top: 38px; }
+.field { display: grid; gap: 10px; min-width: 0; }
+.field > span, .seg legend { font-size: 0.74rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); padding: 0; }
+.seg { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.seg .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg label { cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label span { display: inline-block; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(29, 24, 19, 0.22); font-size: 0.88rem; transition: background 0.2s, color 0.2s; }
+.seg input:checked + span { background: var(--ink); color: var(--stone); border-color: var(--ink); }
+.seg input:focus-visible + span { outline: 2px solid var(--gold-deep); outline-offset: 2px; }
+.area-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.area-row output { font-family: var(--display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.area-row small { color: var(--ink-soft); font-size: 0.85rem; }
+input[type="range"].slider { -webkit-appearance: none; appearance: none; width: 100%; height: 2px; background: rgba(29, 24, 19, 0.2); outline-offset: 8px; }
+input[type="range"].slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold-deep); border: 4px solid var(--stone); box-shadow: 0 0 0 1px var(--gold-deep); cursor: pointer; }
+input[type="range"].slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--gold-deep); border: 4px solid var(--stone); box-shadow: 0 0 0 1px var(--gold-deep); cursor: pointer; }
+.result { display: grid; gap: 30px; padding-top: 6px; }
+.result .big { font-family: var(--display); font-weight: 400; font-size: clamp(2.6rem, 5.4vw, 4.6rem); line-height: 1; font-variant-numeric: tabular-nums; margin-top: 10px; }
+.result .mid { font-family: var(--display); font-size: clamp(1.6rem, 2.6vw, 2.2rem); line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.bars { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 12px; }
+.bars li { display: grid; grid-template-columns: minmax(0, 10em) minmax(0, 1fr) 3.2em; align-items: center; gap: 14px; font-size: 0.88rem; }
+.bars .track { height: 3px; background: rgba(29, 24, 19, 0.12); border-radius: 3px; overflow: hidden; }
+.bars .fill { display: block; height: 100%; background: var(--gold-deep); border-radius: 3px; transition: width 0.5s ease; }
+.bars .pct { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.fine { margin: 0; font-size: 0.8rem; color: var(--ink-soft); max-width: 44ch; }
+
+/* contact */
+.contact { position: relative; min-height: 100svh; display: flex; align-items: center; text-align: center; overflow: hidden; }
+.contact > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.contact .scrim { background: radial-gradient(ellipse at 50% 55%, rgba(10, 9, 7, 0.6), rgba(10, 9, 7, 0.2) 70%), linear-gradient(to top, rgba(10, 9, 7, 0.7), rgba(10, 9, 7, 0) 45%); }
+.contact .inner { width: 100%; display: grid; justify-items: center; gap: 20px; padding-block: 18vh; }
+.contact .script { font-family: var(--script); color: var(--gold); font-size: clamp(3.6rem, 9vw, 7.5rem); line-height: 0.9; margin: 0; }
+.contact h2 { font-size: clamp(2rem, 4.6vw, 3.9rem); max-width: 18ch; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+.phone { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; color: var(--mist); font-size: 0.95rem; }
+.phone .num { font-family: var(--display); font-size: 1.5rem; color: var(--cream); user-select: all; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.phone button { font: 400 0.78rem/1 var(--body); color: var(--cream); background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+.foot { border-top: 1px solid rgba(246, 241, 232, 0.08); }
+.foot .inner { padding-block: 44px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+.foot img { height: 74px; width: auto; }
+.foot p { margin: 0; color: var(--mist); font-size: 0.82rem; }
+
+@media (max-width: 900px) {
+  .site-head nav, .brand small { display: none; }
+  .site-head .pill { padding: 8px 14px; font-size: 0.76rem; }
+  .rail { display: none; }
+  .details-grid, .estimate .inner { grid-template-columns: minmax(0, 1fr); }
+  .strip { grid-auto-columns: minmax(240px, 78%); }
+  .panel { padding: 20px 18px 16px; }
+  .studio { display: block; min-height: 0; }
+  .studio .view { position: relative; height: 58svh; }
+  .studio .view .scrim { background: linear-gradient(to top, var(--night) 0%, rgba(15, 13, 10, 0) 35%); }
+  .studio .inner { margin-top: -64px; padding-block: 0 72px; }
+  .panel .note { display: none; }
+  .finishes { grid-template-columns: 1fr 1fr; }
+  .finish { padding: 8px; gap: 9px; }
+  .finish small { display: none; }
+  .spot { width: 28px; height: 28px; margin: -14px 0 0 -14px; font-size: 1.1rem; }
+  .bars li { grid-template-columns: minmax(0, 8em) minmax(0, 1fr) 3em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .studio .bg { transition: none; }
+  .spot::before { animation: none; }
+}
+</style>
+</head>
+<body>
+<header class="site-head" id="head">
+  <a class="brand" href="#top" aria-label="ANFAS Interiors home"><img src="img/emblem.png" alt=""><b>ANFAS</b><small>Interiors</small></a>
+  <nav aria-label="Sections">
+    <a href="#top">The Process</a>
+    <a href="#before-after">Before &amp; After</a>
+    <a href="#studio">Materials</a>
+    <a href="#details">Details</a>
+    <a href="#estimate">Estimate</a>
+  </nav>
+  <a class="pill gold" href="#contact">Start your project</a>
+</header>
+
+<main>
+  <section class="story" id="top" aria-label="How an ANFAS interior comes together">
+    <div class="stage">
+      <canvas id="gl" aria-hidden="true"></canvas>
+      <div class="fallback" id="fallback">
+        <img src="img/room-final.jpg" alt="Living room with a walnut slat wall, travertine fireplace and a glass wall to the pool">
+        <img src="img/room-line.jpg" alt="">
+        <img src="img/room-shell.jpg" alt="">
+        <img src="img/room-mep.jpg" alt="">
+        <img src="img/room-surfaces.jpg" alt="">
+        <img src="img/room-light.jpg" alt="">
+        <img src="img/room-final.jpg" alt="">
+      </div>
+      <div class="scrim"></div>
+
+      <div class="cap" data-i="0">
+        <p class="eyebrow">Interior design · Fit-out · Joinery &nbsp;—&nbsp; Dubai</p>
+        <h1>Some rooms get furnished. <span class="script">Some get designed.</span></h1>
+        <p>Homes, offices, shops and cafés, designed and built by one ANFAS team.</p>
+        <p class="cue">Scroll to take this room apart</p>
+      </div>
+      <div class="cap" data-i="1"><p class="eyebrow">01 · Concept</p><h2>It starts as a <em>sketch.</em></h2><p>Every wall, light and seam is drawn before anything is ordered.</p></div>
+      <div class="cap" data-i="2"><p class="eyebrow">02 · Site</p><h2>Then it's just a <em>shell.</em></h2><p>We measure the bare space and check every wall, slab and opening before design is fixed.</p></div>
+      <div class="cap" data-i="3"><p class="eyebrow">03 · MEP</p><h2>We build what you'll <em>never see.</em></h2><p>Air conditioning, power, data and plumbing are routed before a single surface goes on.</p></div>
+      <div class="cap" data-i="4"><p class="eyebrow">04 · Surfaces</p><h2>Stone, plaster, <em>quiet.</em></h2><p>Ceilings, walls and floors are finished to the samples you approved.</p></div>
+      <div class="cap" data-i="5"><p class="eyebrow">05 · Joinery &amp; light</p><h2>Then the <em>light.</em></h2><p>Walnut joinery is built to measure, and every light is placed to make the materials glow.</p></div>
+      <div class="cap" data-i="6"><p class="eyebrow">06 · Handover</p><h2>Same room. <em>Every detail.</em></h2><p>Styled, cleaned and handed over by the team that drew the first line.</p></div>
+
+      <ol class="rail" id="rail" aria-hidden="true">
+        <li>The room</li><li>Concept</li><li>Site</li><li>MEP</li><li>Surfaces</li><li>Joinery &amp; light</li><li>Handover</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band" id="before-after">
+    <div class="inner">
+      <div class="head-row">
+        <p class="eyebrow">Before &amp; After</p>
+        <h2>From bare shell to <em>home.</em></h2>
+        <p>Drag across the room to compare the space we were handed with the room we handed back.</p>
+      </div>
+      <figure class="ba" id="ba">
+        <img src="img/room-final.jpg" alt="The finished living room" loading="lazy">
+        <img class="before" src="img/room-shell.jpg" alt="The same room as a bare concrete shell" loading="lazy">
+        <span class="tag l">Before</span><span class="tag r">After</span>
+        <span class="handle"></span>
+        <input type="range" id="ba-range" min="0" max="100" value="50" aria-label="Compare before and after">
+      </figure>
+    </div>
+  </section>
+
+  <section class="studio" id="studio">
+    <div class="view">
+    <img class="bg on" data-look="travertine" src="img/room-final.jpg" alt="The room in travertine and walnut" loading="lazy">
+    <img class="bg" data-look="marble" src="img/room-marble.jpg" alt="The room in Calacatta marble and brass" loading="lazy">
+    <img class="bg" data-look="oak" src="img/room-oak.jpg" alt="The room in light oak and linen" loading="lazy">
+    <img class="bg" data-look="charcoal" src="img/room-charcoal.jpg" alt="The room in smoked oak, charcoal plaster and cognac leather" loading="lazy">
+    <img class="bg" data-look="evening" src="img/room-evening.jpg" alt="The room in travertine and walnut at night" loading="lazy">
+    <div class="scrim"></div>
+    </div>
+    <div class="inner">
+      <div class="panel">
+        <p class="eyebrow">Material studio</p>
+        <h2>Try the room <em>before</em> we build it.</h2>
+        <fieldset class="finishes" id="looks">
+          <legend>Material palette</legend>
+          <label class="finish"><input type="radio" name="look" id="k-trav" value="travertine" checked><i class="sw" style="--a:#d6c4a4;--b:#5c3d24"></i><span><b>Travertine &amp; walnut</b><small>Warm stone, dark wood</small></span></label>
+          <label class="finish"><input type="radio" name="look" id="k-marble" value="marble"><i class="sw" style="--a:#f1eeea;--b:#b89a5e"></i><span><b>Marble &amp; brass</b><small>Calacatta, fluted oak</small></span></label>
+          <label class="finish"><input type="radio" name="look" id="k-oak" value="oak"><i class="sw" style="--a:#e4d8c6;--b:#b99568"></i><span><b>Oak &amp; linen</b><small>Limewash, rattan</small></span></label>
+          <label class="finish"><input type="radio" name="look" id="k-char" value="charcoal"><i class="sw" style="--a:#3a3633;--b:#9a5b2e"></i><span><b>Charcoal &amp; cognac</b><small>Smoked oak, leather</small></span></label>
+          <label class="finish"><input type="radio" name="look" id="k-eve" value="evening"><i class="sw" style="--a:#1d2a44;--b:#e7b56a"></i><span><b>Same room, evening</b><small>Cove light and lamps</small></span></label>
+        </fieldset>
+        <p class="note">We render your own room in each palette before anything is ordered.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="details">
+    <div class="inner details-grid">
+      <figure class="spots" id="spots">
+        <img src="img/room-final.jpg" alt="The finished living room with numbered material points" loading="lazy">
+      </figure>
+      <div class="detail" aria-live="polite">
+        <p class="eyebrow">Details</p>
+        <h3 id="d-title">Every material, <em>chosen.</em></h3>
+        <p id="d-text">Tap a point on the room to see what it is made of and why it is there.</p>
+        <ol id="d-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="work" style="padding-top:0">
+    <div class="inner">
+      <div class="head-row">
+        <p class="eyebrow">Concept visualisations</p>
+        <h2>Homes, offices, <em>shops and cafés.</em></h2>
+      </div>
+      <div class="strip" tabindex="0" aria-label="Spaces we design">
+        <figure class="card"><img src="img/work-villa-living.jpg" alt="Villa living room with a glass wall to the pool" loading="lazy"><figcaption>Villa living room <span>Residential</span></figcaption></figure>
+        <figure class="card"><img src="img/work-majlis.jpg" alt="Contemporary majlis with walnut and bronze screens" loading="lazy"><figcaption>Family majlis <span>Residential</span></figcaption></figure>
+        <figure class="card"><img src="img/work-suite.jpg" alt="Master suite with a walnut headboard wall" loading="lazy"><figcaption>Master suite <span>Residential</span></figcaption></figure>
+        <figure class="card"><img src="img/work-reception.jpg" alt="Office reception with a travertine desk" loading="lazy"><figcaption>Office reception <span>Commercial</span></figcaption></figure>
+        <figure class="card"><img src="img/work-lounge.jpg" alt="Client lounge with boucle sofas" loading="lazy"><figcaption>Client lounge <span>Commercial</span></figcaption></figure>
+        <figure class="card"><img src="img/work-boardroom.jpg" alt="Glass-walled boardroom with a walnut table" loading="lazy"><figcaption>Boardroom <span>Commercial</span></figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="estimate" id="estimate">
+    <div class="inner">
+      <div>
+        <p class="eyebrow">Plan your project</p>
+        <h2>What would <em>yours</em> take?</h2>
+        <div class="controls">
+          <fieldset class="seg">
+            <legend>Space</legend>
+            <div class="opts">
+              <label><input type="radio" name="space" id="sp-apt" value="apartment"><span>Apartment</span></label>
+              <label><input type="radio" name="space" id="sp-villa" value="villa" checked><span>Villa</span></label>
+              <label><input type="radio" name="space" id="sp-office" value="office"><span>Office</span></label>
+              <label><input type="radio" name="space" id="sp-retail" value="retail"><span>Shop or café</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="seg">
+            <legend>Finish level</legend>
+            <div class="opts">
+              <label><input type="radio" name="level" id="lv-0" value="0"><span>Premium</span></label>
+              <label><input type="radio" name="level" id="lv-1" value="1" checked><span>Luxury</span></label>
+              <label><input type="radio" name="level" id="lv-2" value="2"><span>Signature</span></label>
+            </div>
+          </fieldset>
+          <label class="field" for="area">
+            <span>Area to fit out</span>
+            <div class="area-row"><output id="area-out" for="area">3,000 sq ft</output><small id="area-m2">279 m²</small></div>
+            <input class="slider" type="range" id="area" min="500" max="20000" step="100" value="3000">
+          </label>
+        </div>
+      </div>
+      <div class="result" aria-live="polite">
+        <div><p class="eyebrow">Design &amp; fit-out budget</p><div class="big" id="budget">AED 1.0M – 1.2M</div></div>
+        <div><p class="eyebrow">Time on site</p><div class="mid" id="weeks">18 weeks</div></div>
+        <div><p class="eyebrow">Where it goes</p><ul class="bars" id="bars"></ul></div>
+        <p class="fine">Indicative range for planning. Your fixed quote follows a free site visit and design brief.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <img src="img/room-evening.jpg" alt="The finished room at night" loading="lazy">
+    <div class="scrim"></div>
+    <div class="inner">
+      <p class="script">Your turn.</p>
+      <h2>Bring the space. We'll bring the rest.</h2>
+      <div class="actions">
+        <a class="pill gold" href="https://wa.me/971567932093?text=Hi%20ANFAS%2C%20I%27d%20like%20to%20design%20my%20space" target="_blank" rel="noopener">Chat on WhatsApp</a>
+        <a class="pill" href="https://www.instagram.com/anfas.decor/" target="_blank" rel="noopener">@anfas.decor</a>
+      </div>
+      <div class="phone"><span>Call</span><span class="num" id="num">0971 56 793 2093</span><button type="button" id="copy">Copy</button></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="inner">
+    <img src="img/lockup.png" alt="ANFAS Mutanasiqa Decoration" loading="lazy">
+    <p>ANFAS Mutanasiqa Decoration L.L.C · Dubai, United Arab Emirates · © 2026</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const head = document.getElementById("head");
+  const story = document.getElementById("top");
+  const caps = [...story.querySelectorAll(".cap")];
+  const rail = [...document.querySelectorAll("#rail li")];
+  const SRC = ["room-final", "room-line", "room-shell", "room-mep", "room-surfaces", "room-light", "room-final"].map((n) => `img/${n}.jpg`);
+  const N = SRC.length;
+
+  /* ---------- WebGL stage: depth-aware reveal + parallax ---------- */
+  const canvas = document.getElementById("gl");
+  const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false });
+  let glOK = false, prog, tex = [], depthTex = null, uni = {};
+  const VS = "attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}";
+  const FS = `precision highp float;varying vec2 v;
+uniform sampler2D uA,uB,uD;uniform float uMix,uZoom,uEdge;uniform vec2 uOff,uCover;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+void main(){
+  vec2 uv=(v-.5)*uCover/uZoom+.5;
+  float d=texture2D(uD,uv).r;
+  vec2 q=clamp(uv+uOff*(d-.45),.001,.999);
+  d=texture2D(uD,q).r;
+  vec3 a=texture2D(uA,q).rgb,b=texture2D(uB,q).rgb;
+  float k=d+(n(q*vec2(10.,7.))-.5)*.10;
+  float th=mix(-.12,1.15,uMix);
+  float m=1.-smoothstep(th-.05,th+.02,k);
+  vec3 c=mix(a,b,m);
+  float e=1.-smoothstep(0.,.03,abs(k-th));
+  c+=e*vec3(1.,.80,.47)*.6*uEdge;
+  gl_FragColor=vec4(c,1.);
+}`;
+  function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+  function makeTex(img) {
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); return t;
+  }
+  function load(src) { return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+  try {
+    if (!gl) throw new Error("no webgl");
+    prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error("link");
+    gl.useProgram(prog);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    ["uA", "uB", "uD", "uMix", "uZoom", "uEdge", "uOff", "uCover"].forEach((k) => (uni[k] = gl.getUniformLocation(prog, k)));
+    gl.uniform1i(uni.uA, 0); gl.uniform1i(uni.uB, 1); gl.uniform1i(uni.uD, 2);
+    glOK = true;
+  } catch (e) { glOK = false; }
+
+  const cache = {};
+  const fail = () => { glOK = false; document.documentElement.classList.remove("has-gl"); };
+  if (glOK) {
+    Promise.all([load("img/room-depth.png"), load(SRC[0])]).then(([d, a]) => {
+      try { depthTex = makeTex(d); cache[SRC[0]] = makeTex(a); } catch (e) { fail(); return; }
+      document.documentElement.classList.add("has-gl");
+      [...new Set(SRC)].slice(1).forEach((s, i) => setTimeout(() => load(s).then((im) => { try { cache[s] = makeTex(im); } catch (e) { fail(); } }).catch(fail), i * 120));
+    }).catch(fail);
+  }
+
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.75);
+    canvas.width = Math.round(canvas.clientWidth * dpr); canvas.height = Math.round(canvas.clientHeight * dpr);
+  }
+  addEventListener("resize", resize); resize();
+
+  /* pointer parallax (desktop) */
+  let tx = 0, ty = 0, ox = 0, oy = 0;
+  addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse") return; tx = (e.clientX / innerWidth - 0.5); ty = (e.clientY / innerHeight - 0.5); }, { passive: true });
+
+  const fb = [...document.querySelectorAll("#fallback img")];
+  let f = 0;
+  function progress() {
+    const r = story.getBoundingClientRect();
+    const total = story.offsetHeight - innerHeight;
+    return clamp(-r.top / total, 0, 1);
+  }
+  function tick(now) {
+    requestAnimationFrame(tick);
+    head.classList.toggle("solid", story.getBoundingClientRect().bottom < innerHeight * 0.6 || scrollY > innerHeight * 0.4);
+    const r = story.getBoundingClientRect();
+    if (r.bottom < -50 || r.top > innerHeight) return;
+    f = progress() * (N - 1);
+    const i = Math.min(Math.floor(f), N - 2), local = f - i;
+    const mix = i === N - 2 && f >= N - 1 ? 1 : sm(0.28, 0.92, local);
+
+    caps.forEach((el, k) => {
+      const d = Math.abs(f - k - 0.12);
+      const o = sm(0, 1, 1 - (d - 0.26) / 0.22);
+      el.style.opacity = o;
+      el.style.pointerEvents = o > 0.5 ? "auto" : "none";
+      el.style.transform = `translateY(${(f - k - 0.12) * -16}px)`;
+    });
+    const cur = clamp(Math.round(f - 0.12), 0, N - 1);
+    rail.forEach((li, k) => li.classList.toggle("on", k === cur));
+
+    if (!glOK) {
+      fb.forEach((im, k) => { if (k) im.style.opacity = k <= i ? 1 : k === i + 1 ? mix : 0; });
+      return;
+    }
+    const A = cache[SRC[i]], B = cache[SRC[i + 1]];
+    if (!A || !depthTex) return;
+    ox += ((reduce ? 0 : tx) - ox) * 0.06; oy += ((reduce ? 0 : ty) - oy) * 0.06;
+    const drift = reduce ? 0 : Math.sin(f * 1.1) * 0.35;
+    const ca = canvas.width / canvas.height, ia = 1.5;
+    const cover = ca > ia ? [1, ia / ca] : [ca / ia, 1];
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, B || A);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, depthTex);
+    gl.uniform1f(uni.uMix, B ? mix : 0);
+    gl.uniform1f(uni.uEdge, B ? Math.sin(Math.PI * mix) : 0);
+    gl.uniform1f(uni.uZoom, 1.06 + (reduce ? 0 : 0.035 * local));
+    gl.uniform2f(uni.uOff, -(ox + drift) * 0.035, -oy * 0.02);
+    gl.uniform2f(uni.uCover, cover[0], cover[1]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  requestAnimationFrame(tick);
+
+  /* ---------- before / after ---------- */
+  const ba = document.getElementById("ba"), baR = document.getElementById("ba-range");
+  baR.addEventListener("input", () => ba.style.setProperty("--pos", baR.value + "%"));
+
+  /* ---------- material studio ---------- */
+  const looks = [...document.querySelectorAll(".studio .bg")];
+  document.getElementById("looks").addEventListener("change", (e) => looks.forEach((im) => im.classList.toggle("on", im.dataset.look === e.target.value)));
+
+  /* ---------- material details ---------- */
+  const SPOTS = [
+    { x: 5, y: 32, t: "Walnut slat wall", d: "Solid walnut slats, oiled and fixed with a shadow gap, running the full height of the room." },
+    { x: 10, y: 50, t: "Built-in shelving", d: "Walnut shelves built to measure, with hidden LED strips under every shelf." },
+    { x: 50.5, y: 15, t: "Alabaster pendant", d: "A sculptural alabaster pendant on a dimmer, centred in the ceiling cove." },
+    { x: 66, y: 7, t: "Cove lighting", d: "A hidden warm-white LED cove, so the ceiling glows with no visible fittings." },
+    { x: 92, y: 40, t: "Travertine fireplace wall", d: "Large-format honed travertine slabs, matched around a linear gas fire." },
+    { x: 26, y: 76, t: "Curved boucle sofa", d: "A low curved sofa in boucle, sized for this room so the walkway stays clear." },
+    { x: 78, y: 93, t: "Travertine floor", d: "Honed travertine in large tiles with fine joints, the same stone as the fireplace wall." }
+  ];
+  const spotsEl = document.getElementById("spots"), list = document.getElementById("d-list");
+  const dT = document.getElementById("d-title"), dX = document.getElementById("d-text");
+  const btns = SPOTS.map((s, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "spot"; b.textContent = "+"; b.id = "spot-" + i;
+    b.style.left = s.x + "%"; b.style.top = s.y + "%";
+    b.setAttribute("aria-label", s.t); b.setAttribute("aria-expanded", "false");
+    b.addEventListener("click", () => pick(i)); spotsEl.appendChild(b); return b;
+  });
+  const chips = SPOTS.map((s, i) => {
+    const li = document.createElement("li"); const b = document.createElement("button");
+    b.type = "button"; b.textContent = s.t; b.id = "chip-" + i; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => pick(i)); li.appendChild(b); list.appendChild(li); return b;
+  });
+  function pick(i) {
+    btns.forEach((b, k) => b.setAttribute("aria-expanded", String(k === i)));
+    chips.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+    dT.textContent = SPOTS[i].t; dX.textContent = SPOTS[i].d;
+  }
+
+  /* ---------- estimate: indicative design + fit-out, AED per sq ft ---------- */
+  const RATES = { apartment: [220, 320, 450], villa: [250, 360, 500], office: [180, 260, 380], retail: [240, 340, 480] };
+  const SPLIT = {
+    apartment: [["Design", 8], ["MEP & AC", 15], ["Ceilings & walls", 17], ["Flooring", 13], ["Joinery & kitchen", 24], ["Lighting", 8], ["Furniture & styling", 15]],
+    villa: [["Design", 8], ["MEP & AC", 16], ["Ceilings & walls", 18], ["Flooring", 14], ["Joinery", 20], ["Lighting", 9], ["Furniture & styling", 15]],
+    office: [["Design & approvals", 9], ["MEP & AC", 22], ["Partitions & ceilings", 24], ["Flooring", 12], ["Joinery", 13], ["Lighting", 8], ["Furniture", 12]],
+    retail: [["Design & approvals", 9], ["MEP & AC", 18], ["Shopfront & signage", 14], ["Ceilings & walls", 17], ["Joinery & counters", 24], ["Lighting", 10], ["Furniture", 8]]
+  };
+  const area = document.getElementById("area"), fmt = new Intl.NumberFormat("en-US");
+  const aed = (v) => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1e3) + "K";
+  function est() {
+    const sp = document.querySelector('input[name="space"]:checked').value;
+    const lv = +document.querySelector('input[name="level"]:checked').value;
+    const a = +area.value, base = RATES[sp][lv] * a;
+    document.getElementById("area-out").textContent = fmt.format(a) + " sq ft";
+    document.getElementById("area-m2").textContent = fmt.format(Math.round(a * 0.092903)) + " m²";
+    document.getElementById("budget").textContent = "AED " + aed(base * 0.9) + " – " + aed(base * 1.1);
+    document.getElementById("weeks").textContent = Math.round(6 + a / 250 + lv * 2) + " weeks";
+    const s = SPLIT[sp], max = Math.max(...s.map((x) => x[1]));
+    document.getElementById("bars").innerHTML = s.map(([k, v]) => `<li><span>${k}</span><span class="track"><span class="fill" style="width:${(v / max) * 100}%"></span></span><span class="pct">${v}%</span></li>`).join("");
+  }
+  document.querySelector(".estimate").addEventListener("input", est); est();
+
+  /* ---------- copy phone ---------- */
+  const copy = document.getElementById("copy"), num = document.getElementById("num");
+  copy.addEventListener("click", () => {
+    const done = () => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1600); };
+    const sel = () => { const r = document.createRange(); r.selectNodeContents(num); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(num.textContent).then(done).catch(sel); else sel();
+  });
+})();
+</script>
+</body>
+</html>
